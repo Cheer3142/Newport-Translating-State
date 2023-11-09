@@ -44,12 +44,13 @@ def demo_simple_analog_out(analogOut):
 
         t = time.monotonic() - t0
 
-        # vx =  2.5 * math.cos(2 * math.pi * t * frequency)
-        # vy =  2.5 * math.tan(2 * math.pi * t * frequency)
-        if vy < 4:
-            vy = vy + 0.5
-            print('{:0.2f}'.format(vy), end = ' ')
-        vx = 0
+        vx =  2.5 * math.cos(2 * math.pi * t * frequency)
+        vy =  2.5 * math.tan(2 * math.pi * t * frequency)
+        
+        # if vy < 4:
+        #     vy = vy + 0.5
+        #     print('{:0.2f}'.format(vy), end = ' ')
+        # vx = 0
 
         # To change the output signal on each of the two channels, we just need to change the channel's
         # amplitude setting.
