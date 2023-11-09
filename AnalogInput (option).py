@@ -1,3 +1,7 @@
+'''
+One shot reading
+'''
+
 import numpy as np
 import matplotlib.pyplot as plt
 import nidaqmx
@@ -29,8 +33,7 @@ task.start()
 
 
 try:
-    data_buffer = task.read(number_of_samples_per_channel=nidaqmx.constants.READ_ALL_AVAILABLE, timeout=5.0)
-
+    data_buffer = task.read(number_of_samples_per_channel=nidaqmx.constants.READ_ALL_AVAILABLE, timeout=wtime)
     task.wait_until_done()
 
     ax.plot(time_values, data_buffer)

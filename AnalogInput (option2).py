@@ -1,4 +1,5 @@
 """
+Real time reading
 Example: DAQmx-Python Analog Input Acquisition and Plot With History (NI 2023)
 Author: Davit Danielyan
 
