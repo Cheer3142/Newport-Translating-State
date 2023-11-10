@@ -47,7 +47,6 @@ def move_done():
         time.sleep(1)
 
 def port_search():
-    # Call "PortModule"
     a = PortModule.serial_ports()
     return a
 
@@ -69,8 +68,6 @@ def write(com, option):
     print("{}{}\n\r".format(option, com).encode())
     time.sleep(0.1)
         
-    
-# Define a function to write/read commands to the actuator    
 def query(com, option):
     if option.isnumeric():
         Actuator.write("{}{}\n\r".format(option, com).encode())
@@ -100,7 +97,7 @@ query("XM", 1)
 write("EX", i)
 '''
 
-# Port Search
+### Port Search ###
 print("Port Search.....")
 port_available = port_search()
 print(port_available)
@@ -108,27 +105,29 @@ if len(port_available) == 0:
     print("No Port")
     exit()
 
-# Initialize Parameters
+### Initialize Parameters ###
 selected_port = int(input("Your Port's index (zero start): "))
 axe = select_port(port_available[selected_port])
 
-# Initialize variables for data storage and plotting
+### Initialize variables for data storage and plotting ###
 data_buffer = [deque(maxlen=AnalogInput.num_samples), deque(maxlen=AnalogInput.num_samples)]
 time_buffer = deque(maxlen=AnalogInput.num_samples)
 obs_velocity    = 0.1
 distance        = 10
 wtime = distance/obs_velocity
 
-# Start Command List    (Start at +45)
-stcom_lst   = ["MO", "OR", "VA10", "PA+35", "WS", "VA{}".format(obs_velocity)]   
+exit()
+### Start Command List (Start at +45) ###
+stcom_lst   = ["MO", "OR", "WS", "VA10", "PA+35", "WS", "VA{}".format(obs_velocity)]   
+stcom_con   = ';'.join(stcom_lst) 
 
-# Back and Forth COmmand List
+### Back and Forth Command ###
 back        = "PR-10"
 forth       = "PR+10"
 
-# Running
+### Running ###
 print("Running Task.....")
-lst_com(stcom_lst, axe)                          
+write(stcom_con, axe)                       
 
 '''
 Status Check
@@ -137,13 +136,13 @@ Status Check
 '''
 ts_stat = query("TS?", axe)    
 ts_md   = query("MD?", axe)
-time.sleep(4)
+time.sleep(10)
 ts_stat2 = query("TS?", axe)    
 ts_md2   = query("MD?", axe)
 # Actuator.close()
 exit()
 
-# Move forth form +35 to +45 
+### Move forth form +35 to +45 ###
 move_done()
 write(forth, axe)         # +10
 st = time.time()
@@ -159,7 +158,7 @@ while True:
         AnalogInput.plt.ioff()  # Turn off interactive mode
         break
     
-# Close connection
+### Close connection ###
 print('---------- CLose Port ----------')
 Actuator.close()
 
