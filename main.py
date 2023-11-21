@@ -16,6 +16,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import nidaqmx
 from nidaqmx.constants import AcquisitionType
+import pandas as pd
 
 
 '''
@@ -47,7 +48,7 @@ Query:
 def move_done():
     while True:
         ts_md   = query("MD?", axe)
-        if Done:
+        if ts_md == b'1':
             break
         time.sleep(1)
 
@@ -84,7 +85,7 @@ def query(com, option):
         print(resp)
         return resp
     except:
-        raise Exception("Query Error: ", com)
+        # raise Exception("Query Error: ", com)
         print("Query Error: ", com)
         return False
 
@@ -92,6 +93,48 @@ def lst_com(lst, axe):
     for com in lst:
         write(com, axe)
         time.sleep(0.1)
+
+def moveandread(data_buffer, com, i):
+    write(com, axe) 
+    task.start()
+    data_buffer['A0iter{}'.format(i)], data_buffer['A1iter{}'.format(i)] = task.read(number_of_samples_per_channel = nidaqmx.constants.READ_ALL_AVAILABLE
+                                            , timeout=wtime)
+    # data_buffer.append(task.read(number_of_samples_per_channel=
+    #                                 nidaqmx.constants.READ_ALL_AVAILABLE, 
+    #                                 timeout=wtime)) #task.wait_until_done()
+    
+    ### Set the data ###
+    line0.set_data(time_values, data_buffer['A0iter{}'.format(i)])
+    ax[0].relim()
+    ax[0].relim()
+    line1.set_data(time_values, data_buffer['A1iter{}'.format(i)])
+    ax[1].relim()
+    ax[1].autoscale_view()
+
+    ### Fix ###
+    fig.canvas.draw()
+    fig.canvas.flush_events()
+    task.stop()
+    i = i + 1
+
+    ''' 
+    st = time.time()
+    while True:
+    try:
+        data_buffer, time_buffer = AnalogInput.read(data_buffer, time_buffer)
+        if time.time() - st > wtime:
+            break
+    except (KeyboardInterrupt, SystemExit):
+        print("Exit by Keyboard Interrupt")
+        AnalogInput.task.stop()
+        AnalogInput.task.close()
+        AnalogInput.plt.ioff()  # Turn off interactive mode
+        break
+    '''
+    
+    return data_buffer, i
+    
+
 '''
 Spec:
     speed = 1.8 mm/s
@@ -118,15 +161,17 @@ if not axe:
     exit()
 
 ### Declare the dynamic range and velocity ###
-obs_velocity    = 0.1
-distance        = 10
+obs_velocity    = 1.8
+distance        = 20
+cycle           = 2
 
 ### Initialize variables for data storage and plotting ###
 wtime       = distance/obs_velocity
 clk_rate    = 50000
-num_samples = clk_rate * wtime                      # wtime seconds at clk_rate Hz
-time_values = np.linspace(0, wtime, num_samples)
-data_buffer = []
+num_samples = clk_rate * int(wtime)                      # wtime seconds at clk_rate Hz
+time_values = np.linspace(0, wtime, int(num_samples))
+# data_buffer = []
+data_buffer = pd.DataFrame(index=time_values)
 # data_buffer = np.zeros(num_samples)
 
 ### Configure NI DAQmx settings ###
@@ -142,21 +187,21 @@ fig, ax = plt.subplots(1, 2, figsize=(15, 4))
 ax[0].set_xlabel('Time (s)')
 ax[0].set_ylabel('Voltage (V)')
 ax[0].set_title('Analog Input Channel 2')
-line0, = ax[0].plot([], [])
+line0, = ax[0].plot([], [], 'g')
 
 ax[1].set_xlabel('Time (s)')
 ax[1].set_ylabel('Voltage (V)')
 ax[1].set_title('Analog Input Channel 3')
 line1, = ax[1].plot([], [])
 
-exit()    #######################################################################################################################
+# exit()    # Check VA ######################################################################################################################
 ### Start Command List (Start at +45) ###
-stcom_lst   = ["MO", "OR", "WS", "VA10", "PA+35", "WS", "VA{}".format(obs_velocity)]   
-stcom_con   = ';'.join(stcom_lst) 
+stcom_lst   = ["MO", "OR", "WS", "VA15", "PA+80", "WS", "VA{}".format(obs_velocity)]   
+stcom_con   = ';1'.join(stcom_lst) 
 
 ### Back and Forth Command ###
-back        = "PR-{};WS".format(distance)
-forth       = "PR+{};WS".format(distance)
+back        = "PR-{};{}WS".format(distance, axe)
+forth       = "PR+{};{}WS".format(distance, axe)
 
 ### Running ###
 print("Running Task.....")
@@ -166,58 +211,35 @@ write(stcom_con, axe)
 Status Check
 - TS = Get controller status  
 - MD =  read motion done status
-'''
+
 ts_stat = query("TS?", axe)    
 ts_md   = query("MD?", axe)
 time.sleep(10)
 ts_stat2 = query("TS?", axe)    
 ts_md2   = query("MD?", axe)
 
-exit()    #######################################################################################################################
-### Move forth form +35 to +45 ###
-move_done()
-write(forth, axe)         # +10
-try:
-    task.start()
-    data_buffer.append(task.read(number_of_samples_per_channel=
-                                    nidaqmx.constants.READ_ALL_AVAILABLE, 
-                                    timeout=wtime)) #task.wait_until_done()
-    
-    ### Set the data ###
-    line0.set_data(time_values, data_buffer[-1][0])
-    ax[0].relim()
-    ax[0].relim()
-    line1.set_data(time_values, data_buffer[-1][1])
-    ax[1].relim()
-    ax[1].autoscale_view()
-
-    ### Fix ###
-    fig.canvas.draw()
-    fig.canvas.flush_events()
-    task.stop()
-finally:
-    print('Closing The Task')
-    task.close()
-
-''' 
-st = time.time()
-while True:
-    try:
-        data_buffer, time_buffer = AnalogInput.read(data_buffer, time_buffer)
-        if time.time() - st > wtime:
-            break
-    except (KeyboardInterrupt, SystemExit):
-        print("Exit by Keyboard Interrupt")
-        AnalogInput.task.stop()
-        AnalogInput.task.close()
-        AnalogInput.plt.ioff()  # Turn off interactive mode
-        break
 '''
+
+# exit()    # Check return status ######################################################################################################################
+### Move forth form +35 to +45 ###
+i = 1
+for _ in range(cycle):
+    move_done()    
+    data_buffer, i = moveandread(data_buffer, forth, i)          # Move forth +20
+
+    time.sleep(2)
+    move_done()    
+    data_buffer, i = moveandread(data_buffer, back, i)          # Move forth +20
+
+
 
 # Close connection #######################################################################################################################
 print('---------- CLose Port ----------')
 Actuator.close()
-
+ntime = time.localtime(time.time())
+print('Closing The Task:', i)
+task.close()
+data_buffer.to_csv('{}Data.csv'.format((time.strftime("%Y-%m-%d %H_%M_%S", ntime))))
 
 
 

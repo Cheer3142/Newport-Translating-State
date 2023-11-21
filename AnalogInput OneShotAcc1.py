@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import nidaqmx
 from nidaqmx.constants import AcquisitionType
+import pandas as pd
 # import time
 
 # Initialize variables for data storage and plotting
@@ -13,7 +14,8 @@ wtime       = 5
 clk_rate    = 50000
 num_samples = clk_rate * wtime  # 5 seconds at 5000 Hz
 time_values = np.linspace(0, wtime, num_samples)
-data_buffer = []
+#data_buffer = []
+df = pd.DataFrame(index=time_values)
 #data_buffer = np.zeros(num_samples)
 
 
@@ -49,21 +51,23 @@ try:
         # a = time.time()
         
         task.start()
-        data_buffer.append(task.read(number_of_samples_per_channel=
-                                     nidaqmx.constants.READ_ALL_AVAILABLE, timeout=wtime)) #task.wait_until_done()
+        df['head{}'.format(i)], df['low{}'.format(i)] = task.read(number_of_samples_per_channel = nidaqmx.constants.READ_ALL_AVAILABLE
+                                            , timeout=wtime)
+        #data_buffer.append(task.read(number_of_samples_per_channel=
+        #                             nidaqmx.constants.READ_ALL_AVAILABLE, timeout=wtime)) #task.wait_until_done()
         # b = time.time()
         # print(b-a, end=' ')
         
         ### Plot Axis#0 ###
         # ax[0].plot(time_values, data_buffer[-1][0], label='attempt {}'.format(i+1))
-        line0.set_data(time_values, data_buffer[-1][0])
+        line0.set_data(time_values, df['head{}'.format(i)])
         ax[0].relim()
         ax[0].autoscale_view()
         # ax[0].legend()
 
         ### Plot Axis#1 ###
         # ax[1].plot(time_values, data_buffer[-1][1], label='attempt {}'.format(i+1))
-        line1.set_data(time_values, data_buffer[-1][1])
+        line1.set_data(time_values, df['low{}'.format(i)])
         ax[1].relim()
         ax[1].autoscale_view()
         # ax[1].legend()
